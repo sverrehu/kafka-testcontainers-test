@@ -51,7 +51,7 @@ extends KafkaContainer {
         final String jaas = "KafkaServer { org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\" user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"; };\n";
         copyFileToContainer(Transferable.of(jaas.getBytes(StandardCharsets.UTF_8), 0600), JAAS_CONFIG_FILE);
         try {
-            execInContainer("sh", "-c", "perl -p -i -e 's/BROKER:.*:\\d+/BROKER:\\/\\/localhost:29093/g' /testcontainers_start.sh");
+            execInContainer("sh", "-c", "perl -p -i -e 's/BROKER:.*:\\d+/BROKER:\\/\\/localhost:29093/g' /testcontainers_start.sh; cat /testcontainers_start.sh");
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
