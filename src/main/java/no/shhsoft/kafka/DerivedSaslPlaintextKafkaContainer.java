@@ -10,6 +10,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.images.builder.Transferable;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +50,11 @@ extends KafkaContainer {
         super.containerIsStarting(containerInfo, reused);
         final String jaas = "KafkaServer { org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\" user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"; };\n";
         copyFileToContainer(Transferable.of(jaas.getBytes(StandardCharsets.UTF_8), 0600), JAAS_CONFIG_FILE);
+        try {
+            execInContainer("sh", "-c", "perl -p -i -e 's/BROKER:.*:\\d+/BROKER:\\/\\/localhost:29093/g' /testcontainers_start.sh");
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Map<String, Object> getAdminConfig() {
