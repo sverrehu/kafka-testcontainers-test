@@ -9,6 +9,12 @@ import org.testcontainers.utility.DockerImageName;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * An attempt at extending KafkaContainer from testcontainers 1.15.0-rc2
+ * to support SASL, and Confluent 6.0.0.
+ *
+ * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
+ */
 public final class DerivedSaslPlaintextKafkaContainer
 extends KafkaContainer {
 
@@ -30,8 +36,7 @@ extends KafkaContainer {
         withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "SASL_PLAINTEXT:SASL_PLAINTEXT," + interBrokerListenerName + ":SASL_PLAINTEXT");
         withEnv("KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL", "PLAIN");
         withEnv("KAFKA_SASL_ENABLED_MECHANISMS", "PLAIN");
-        /* TODO: kafka.security.authorizer.AclAuthorizer when moving to 6.0.0 */
-        withEnv("KAFKA_AUTHORIZER_CLASS_NAME", "kafka.security.auth.SimpleAclAuthorizer");
+        withEnv("KAFKA_AUTHORIZER_CLASS_NAME", "kafka.security.authorizer.AclAuthorizer");
         withEnv("KAFKA_SUPER_USERS", "User:kafka");
         withEnv("KAFKA_LISTENER_NAME_SASL_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG",
                 "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\" user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"");
