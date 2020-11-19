@@ -2,22 +2,16 @@ package no.shhsoft.kafka;
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
-import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Based on KafkaContainer from the testcontainers project.
+ *
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
 public final class SaslPlaintextKafkaContainer
@@ -27,10 +21,11 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
     public static final int KAFKA_PORT = 9092;
     public static final int ZOOKEEPER_PORT = 2181;
     private static final int PORT_NOT_ASSIGNED = -1;
-    /* Note difference with 0.0.0.0 and localhost: The former will be replaced by the container IP. */
+    /* Note difference between 0.0.0.0 and localhost: The former will be replaced by the container IP. */
     private static final String LISTENERS = "SASL_PLAINTEXT://0.0.0.0:9092,INTERNAL://127.0.0.1:29092";
     private int port = PORT_NOT_ASSIGNED;
     private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
+    private static final String JAAS_CONFIG_FILE = "/tmp/broker_jaas.conf";
 
     public SaslPlaintextKafkaContainer() {
         this(DEFAULT_IMAGE);
@@ -53,7 +48,7 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
         withEnv("KAFKA_SUPER_USERS", "User:kafka");
         withEnv("KAFKA_LISTENER_NAME_SASL_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG",
                 "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\" user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"");
-        withEnv("KAFKA_OPTS", "-Djava.security.auth.login.config=/tmp/broker_jaas.conf");
+        withEnv("KAFKA_OPTS", "-Djava.security.auth.login.config=" + JAAS_CONFIG_FILE);
     }
 
     public String getBootstrapServers() {
@@ -77,18 +72,31 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
         if (reused) {
             return;
         }
-        final String zookeeperConnect = startZookeeper();
-        final String advertisedListeners = LISTENERS.replaceAll(":" + KAFKA_PORT, ":" + port).replaceAll("0\\.0\\.0\\.0", getContainerIpAddress());
-        final String command = "#!/bin/bash\n"
-                               + "cat > /tmp/broker_jaas.conf <<EOT\n"
-                               + "KafkaServer { org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\" user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"; };\n"
-                               + "EOT\n"
-                               + "export KAFKA_ZOOKEEPER_CONNECT='" + zookeeperConnect + "'\n"
-                               + "export KAFKA_ADVERTISED_LISTENERS='" + advertisedListeners + "'\n"
-                               + ". /etc/confluent/docker/bash-config\n"
-                               + "/etc/confluent/docker/configure\n"
-                               + "/etc/confluent/docker/launch\n";
-        copyFileToContainer(Transferable.of(command.getBytes(StandardCharsets.UTF_8), 0755), STARTER_SCRIPT);
+        uploadJaasConfig();
+        createStartupScript(startZookeeper());
+    }
+
+    private void uploadJaasConfig() {
+        final String jaas = "KafkaServer { org.apache.kafka.common.security.plain.PlainLoginModule required "
+                            + "username=\"kafka\" password=\"kafka\" "
+                            + "user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"; };\n";
+        copyFileToContainer(Transferable.of(jaas.getBytes(StandardCharsets.UTF_8), 0600), JAAS_CONFIG_FILE);
+    }
+
+    private void createStartupScript(final String zookeeperConnect) {
+        final String listeners = getEnvMap().get("KAFKA_LISTENERS");
+        if (listeners == null) {
+            throw new RuntimeException("Need environment variable KAFKA_LISTENERS");
+        }
+        final String advertisedListeners = listeners.replaceAll(":" + KAFKA_PORT, ":" + getMappedPort(KAFKA_PORT))
+                                                    .replaceAll("0\\.0\\.0\\.0", getContainerIpAddress());
+        final String starterScript = "#!/bin/bash\n"
+                                     + "export KAFKA_ZOOKEEPER_CONNECT='" + zookeeperConnect + "'\n"
+                                     + "export KAFKA_ADVERTISED_LISTENERS='" + advertisedListeners + "'\n"
+                                     + ". /etc/confluent/docker/bash-config\n"
+                                     + "/etc/confluent/docker/configure\n"
+                                     + "/etc/confluent/docker/launch\n";
+        copyFileToContainer(Transferable.of(starterScript.getBytes(StandardCharsets.UTF_8), 0755), STARTER_SCRIPT);
     }
 
     private String startZookeeper() {
@@ -106,39 +114,6 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
             throw new RuntimeException(e);
         }
         return "127.0.0.1:" + ZOOKEEPER_PORT;
-    }
-
-    public Map<String, Object> getAdminConfig() {
-        return getCommonConfig();
-    }
-
-    public Admin getAdmin() {
-        return Admin.create(getAdminConfig());
-    }
-
-    public Map<String, Object> getProducerConfig() {
-        return getCommonConfig();
-    }
-
-    public Producer<?, ?> getProducer() {
-        return new KafkaProducer<>(getProducerConfig());
-    }
-
-    public Map<String, Object> getConsumerConfig() {
-        return getCommonConfig();
-    }
-
-    public Consumer<?, ?> getConsumer() {
-        return new KafkaConsumer<>(getConsumerConfig());
-    }
-
-    private Map<String, Object> getCommonConfig() {
-        final Map<String, Object> map = new HashMap<>();
-        map.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, getBootstrapServers());
-        map.put("security.protocol", "SASL_PLAINTEXT");
-        map.put("sasl.mechanism", "PLAIN");
-        map.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\";");
-        return map;
     }
 
 }
