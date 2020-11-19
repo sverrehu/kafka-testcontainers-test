@@ -73,8 +73,7 @@ extends KafkaContainer {
          * KafkaContainer.onStart cannot be overridden in a meaningful
          * way, because it blocks my override from calling
          * "super.super.onStart". So I ended up reimplementing
-         * the entire containerIsStarting. Without the external Zookeeper
-         * thing, as I don't need it. */
+         * the entire containerIsStarting. */
 
         if (reused) {
             return;
