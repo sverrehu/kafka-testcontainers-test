@@ -88,7 +88,7 @@ extends KafkaContainer {
         final String jaas = "KafkaServer { org.apache.kafka.common.security.plain.PlainLoginModule required "
                             + "username=\"kafka\" password=\"kafka\" "
                             + "user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"; };\n";
-        copyFileToContainer(Transferable.of(jaas.getBytes(StandardCharsets.UTF_8), 0600), JAAS_CONFIG_FILE);
+        copyFileToContainer(Transferable.of(jaas.getBytes(StandardCharsets.UTF_8), 0644), JAAS_CONFIG_FILE);
     }
 
     private void createAlternativeStartupScript(final String zookeeperConnect) {
