@@ -68,7 +68,7 @@ extends KafkaContainer {
          * address, making it inaccessible to the local Controller that
          * wants to access it. I spent a lot of time trying to call
          * the original KafkaContainer.containerIsStarting and massaging
-         * the startup script afterwards, but KakfaContainer.onStart
+         * the startup script afterwards, but KafkaContainer.onStart
          * would pick it up and run it before I managed to rewrite.
          * KafkaContainer.onStart cannot be overridden in a meaningful
          * way, because it blocks my override from calling
