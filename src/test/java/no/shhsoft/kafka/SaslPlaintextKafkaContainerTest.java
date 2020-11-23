@@ -25,7 +25,7 @@ extends AbstractKafkaAdminTest {
 
     @Override
     protected Admin getAdmin() {
-        return KafkaContainerTestHelper.getAdmin(container.getBootstrapServers());
+        return KafkaContainerTestHelper.getSaslAdmin(container.getBootstrapServers());
     }
 
 }

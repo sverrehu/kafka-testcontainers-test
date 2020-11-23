@@ -10,77 +10,91 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Based on KafkaContainer from the testcontainers project version 1.15.0-rc2.
+ * An alternative KafkaContainer that is easier to extend than the one from the testcontainers project version 1.15.0.
  *
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public final class SaslPlaintextKafkaContainer
-extends GenericContainer<SaslPlaintextKafkaContainer> {
+public class AlternativeKafkaContainer
+extends GenericContainer<AlternativeKafkaContainer> {
 
     private static final DockerImageName DEFAULT_IMAGE = DockerImageName.parse("confluentinc/cp-kafka").withTag("6.0.0");
-    public static final int KAFKA_PORT = 9092;
-    public static final int ZOOKEEPER_PORT = 2181;
-    private static final int PORT_NOT_ASSIGNED = -1;
-    /* Note difference between 0.0.0.0 and localhost: The former will be replaced by the container IP. */
-    private static final String LISTENERS = "SASL_PLAINTEXT://0.0.0.0:9092,INTERNAL://127.0.0.1:29092";
-    private int port = PORT_NOT_ASSIGNED;
     private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
-    private static final String JAAS_CONFIG_FILE = "/tmp/broker_jaas.conf";
+    public static final String INTERNAL_LISTENER_NAME = "BROKER";
+    public static final int KAFKA_PORT = 9092;
+    public static final int KAFKA_INTERNAL_PORT = 9093;
+    public static final int ZOOKEEPER_PORT = 2181;
+    /* Note difference between 0.0.0.0 and localhost: The former will be replaced by the container IP. */
+    private static final String LISTENERS = "PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "," + INTERNAL_LISTENER_NAME + "://127.0.0.1:" + KAFKA_INTERNAL_PORT;
+    private static final int PORT_NOT_ASSIGNED = -1;
+    private int port = PORT_NOT_ASSIGNED;
+    protected String externalZookeeperConnect = null;
 
-    public SaslPlaintextKafkaContainer() {
+    public AlternativeKafkaContainer() {
         this(DEFAULT_IMAGE);
     }
 
-    public SaslPlaintextKafkaContainer(final DockerImageName dockerImageName) {
+    public AlternativeKafkaContainer(final DockerImageName dockerImageName) {
         super(dockerImageName);
-        withExposedPorts(KAFKA_PORT, ZOOKEEPER_PORT);
+        withExposedPorts(KAFKA_PORT);
+        withEnv("KAFKA_LISTENERS", LISTENERS);
+        withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT," + INTERNAL_LISTENER_NAME + ":PLAINTEXT");
+        withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", INTERNAL_LISTENER_NAME);
+
         withEnv("KAFKA_BROKER_ID", "1");
         withEnv("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1");
         withEnv("KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS", "1");
         withEnv("KAFKA_LOG_FLUSH_INTERVAL_MESSAGES", Long.MAX_VALUE + "");
         withEnv("KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS", "0");
-        withEnv("KAFKA_LISTENERS", LISTENERS);
-        withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "SASL_PLAINTEXT:SASL_PLAINTEXT,INTERNAL:SASL_PLAINTEXT");
-        withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", "INTERNAL");
-        withEnv("KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL", "PLAIN");
-        withEnv("KAFKA_SASL_ENABLED_MECHANISMS", "PLAIN");
-        withEnv("KAFKA_AUTHORIZER_CLASS_NAME", "kafka.security.authorizer.AclAuthorizer");
-        withEnv("KAFKA_SUPER_USERS", "User:kafka");
-        withEnv("KAFKA_LISTENER_NAME_SASL_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\" user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"");
-        withEnv("KAFKA_OPTS", "-Djava.security.auth.login.config=" + JAAS_CONFIG_FILE);
     }
 
-    public String getBootstrapServers() {
+    public final AlternativeKafkaContainer withEmbeddedZookeeper() {
+        externalZookeeperConnect = null;
+        return self();
+    }
+
+    public final AlternativeKafkaContainer withExternalZookeeper(final String connectString) {
+        externalZookeeperConnect = connectString;
+        return self();
+    }
+
+    public final String getBootstrapServers() {
         if (port == PORT_NOT_ASSIGNED) {
             throw new IllegalStateException("You should start Kafka container first");
         }
-        return String.format("%s:%s", getHost(), port);
+        return modifyBoostrapServers(String.format("%s:%s", getHost(), port));
+    }
+
+    protected String modifyBoostrapServers(final String bootstrapServers) {
+        return bootstrapServers;
     }
 
     @Override
-    protected void doStart() {
+    protected final void doStart() {
         withCommand("sh", "-c", "while [ ! -f " + STARTER_SCRIPT + " ]; do sleep 0.1; done; " + STARTER_SCRIPT);
+        if (externalZookeeperConnect == null) {
+            addExposedPort(ZOOKEEPER_PORT);
+        }
+        beforeStart();
         super.doStart();
     }
 
+    protected void beforeStart() {
+    }
+
     @Override
-    protected void containerIsStarting(final InspectContainerResponse containerInfo, final boolean reused) {
+    protected final void containerIsStarting(final InspectContainerResponse containerInfo, final boolean reused) {
         super.containerIsStarting(containerInfo, reused);
         followOutput(new TtyConsumer(getContainerId().substring(0, 12)));
         port = getMappedPort(KAFKA_PORT);
         if (reused) {
             return;
         }
-        uploadJaasConfig();
-        createStartupScript(startZookeeper());
+        beforeStartupPreparations();
+        final String zookeeperConnect = externalZookeeperConnect != null ? externalZookeeperConnect : startZookeeper();
+        createStartupScript(zookeeperConnect);
     }
 
-    private void uploadJaasConfig() {
-        final String jaas = "KafkaServer { org.apache.kafka.common.security.plain.PlainLoginModule required "
-                            + "username=\"kafka\" password=\"kafka\" "
-                            + "user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"; };\n";
-        copyFileToContainer(Transferable.of(jaas.getBytes(StandardCharsets.UTF_8), 0644), JAAS_CONFIG_FILE);
+    protected void beforeStartupPreparations() {
     }
 
     private void createStartupScript(final String zookeeperConnect) {
@@ -88,15 +102,25 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
         if (listeners == null) {
             throw new RuntimeException("Need environment variable KAFKA_LISTENERS");
         }
-        final String advertisedListeners = listeners.replaceAll(":" + KAFKA_PORT, ":" + getMappedPort(KAFKA_PORT))
-                                                    .replaceAll("0\\.0\\.0\\.0", getContainerIpAddress());
-        final String starterScript = "#!/bin/bash\n"
-                                     + "export KAFKA_ZOOKEEPER_CONNECT='" + zookeeperConnect + "'\n"
-                                     + "export KAFKA_ADVERTISED_LISTENERS='" + advertisedListeners + "'\n"
-                                     + ". /etc/confluent/docker/bash-config\n"
-                                     + "/etc/confluent/docker/configure\n"
-                                     + "/etc/confluent/docker/launch\n";
-        copyFileToContainer(Transferable.of(starterScript.getBytes(StandardCharsets.UTF_8), 0755), STARTER_SCRIPT);
+        final String advertisedListeners = modifyAdvertisedListeners(
+            listeners.replaceAll(":" + KAFKA_PORT, ":" + getMappedPort(KAFKA_PORT))
+            .replaceAll("0\\.0\\.0\\.0", getContainerIpAddress()));
+        final String startupScript = modifyStartupScript(
+            "#!/bin/bash\n"
+            + "export KAFKA_ZOOKEEPER_CONNECT='" + zookeeperConnect + "'\n"
+            + "export KAFKA_ADVERTISED_LISTENERS='" + advertisedListeners + "'\n"
+            + ". /etc/confluent/docker/bash-config\n"
+            + "/etc/confluent/docker/configure\n"
+            + "/etc/confluent/docker/launch\n");
+        copyFileToContainer(Transferable.of(startupScript.getBytes(StandardCharsets.UTF_8), 0755), STARTER_SCRIPT);
+    }
+
+    protected String modifyAdvertisedListeners(final String advertisedListeners) {
+        return advertisedListeners;
+    }
+
+    protected String modifyStartupScript(final String startupScript) {
+        return startupScript;
     }
 
     private String startZookeeper() {

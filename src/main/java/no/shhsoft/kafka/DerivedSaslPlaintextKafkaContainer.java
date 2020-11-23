@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
- * An attempt at extending KafkaContainer from testcontainers 1.15.0-rc2
+ * An attempt at extending KafkaContainer from testcontainers 1.15.0
  * to support SASL, and Confluent 6.0.0.
  *
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>

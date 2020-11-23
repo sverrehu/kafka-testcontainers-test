@@ -7,14 +7,14 @@ import org.junit.BeforeClass;
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public final class DerivedSaslPlaintextKafkaContainerTest
+public final class AlternativeKafkaContainerTest
 extends AbstractKafkaAdminTest {
 
-    private static DerivedSaslPlaintextKafkaContainer container;
+    private static AlternativeKafkaContainer container;
 
     @BeforeClass
     public static void beforeClass() {
-        container = new DerivedSaslPlaintextKafkaContainer();
+        container = new AlternativeKafkaContainer();
         container.start();
     }
 
@@ -25,7 +25,7 @@ extends AbstractKafkaAdminTest {
 
     @Override
     protected Admin getAdmin() {
-        return KafkaContainerTestHelper.getSaslAdmin(container.getBootstrapServers());
+        return KafkaContainerTestHelper.getNoAuthAdmin(container.getBootstrapServers());
     }
 
 }

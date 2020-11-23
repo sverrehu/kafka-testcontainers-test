@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Based on KafkaContainer from the testcontainers project version 1.15.0-rc2.
+ * Based on KafkaContainer from the testcontainers project version 1.15.0.
  *
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */

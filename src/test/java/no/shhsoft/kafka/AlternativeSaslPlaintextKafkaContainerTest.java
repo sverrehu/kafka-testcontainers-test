@@ -7,14 +7,14 @@ import org.junit.BeforeClass;
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public final class DerivedSaslPlaintextKafkaContainerTest
+public final class AlternativeSaslPlaintextKafkaContainerTest
 extends AbstractKafkaAdminTest {
 
-    private static DerivedSaslPlaintextKafkaContainer container;
+    private static AlternativeSaslPlaintextKafkaContainer container;
 
     @BeforeClass
     public static void beforeClass() {
-        container = new DerivedSaslPlaintextKafkaContainer();
+        container = new AlternativeSaslPlaintextKafkaContainer();
         container.start();
     }
 
