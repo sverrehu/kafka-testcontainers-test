@@ -39,7 +39,6 @@ extends GenericContainer<AlternativeKafkaContainer> {
         withEnv("KAFKA_LISTENERS", LISTENERS);
         withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT," + INTERNAL_LISTENER_NAME + ":PLAINTEXT");
         withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", INTERNAL_LISTENER_NAME);
-
         withEnv("KAFKA_BROKER_ID", "1");
         withEnv("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1");
         withEnv("KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS", "1");
@@ -61,10 +60,11 @@ extends GenericContainer<AlternativeKafkaContainer> {
         if (port == PORT_NOT_ASSIGNED) {
             throw new IllegalStateException("You should start Kafka container first");
         }
-        return modifyBoostrapServers(String.format("%s:%s", getHost(), port));
+        return overrideBootstrapServers(String.format("%s:%s", getHost(), port));
     }
 
-    protected String modifyBoostrapServers(final String bootstrapServers) {
+    /** Subclasses may override. */
+    protected String overrideBootstrapServers(final String bootstrapServers) {
         return bootstrapServers;
     }
 
@@ -78,6 +78,7 @@ extends GenericContainer<AlternativeKafkaContainer> {
         super.doStart();
     }
 
+    /** Subclasses may override. */
     protected void beforeStart() {
     }
 
@@ -94,6 +95,7 @@ extends GenericContainer<AlternativeKafkaContainer> {
         createStartupScript(zookeeperConnect);
     }
 
+    /** Subclasses may override. */
     protected void beforeStartupPreparations() {
     }
 
@@ -102,10 +104,10 @@ extends GenericContainer<AlternativeKafkaContainer> {
         if (listeners == null) {
             throw new RuntimeException("Need environment variable KAFKA_LISTENERS");
         }
-        final String advertisedListeners = modifyAdvertisedListeners(
+        final String advertisedListeners = overrideAdvertisedListeners(
             listeners.replaceAll(":" + KAFKA_PORT, ":" + getMappedPort(KAFKA_PORT))
             .replaceAll("0\\.0\\.0\\.0", getContainerIpAddress()));
-        final String startupScript = modifyStartupScript(
+        final String startupScript = overrideStartupScript(
             "#!/bin/bash\n"
             + "export KAFKA_ZOOKEEPER_CONNECT='" + zookeeperConnect + "'\n"
             + "export KAFKA_ADVERTISED_LISTENERS='" + advertisedListeners + "'\n"
@@ -115,11 +117,13 @@ extends GenericContainer<AlternativeKafkaContainer> {
         copyFileToContainer(Transferable.of(startupScript.getBytes(StandardCharsets.UTF_8), 0755), STARTER_SCRIPT);
     }
 
-    protected String modifyAdvertisedListeners(final String advertisedListeners) {
+    /** Subclasses may override. */
+    protected String overrideAdvertisedListeners(final String advertisedListeners) {
         return advertisedListeners;
     }
 
-    protected String modifyStartupScript(final String startupScript) {
+    /** Subclasses may override. */
+    protected String overrideStartupScript(final String startupScript) {
         return startupScript;
     }
 
