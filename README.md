@@ -21,5 +21,5 @@ was not very extendable. This project contains my experiments.
 
 * [AlternativeSaslPlaintextKafkaContainer](./src/main/java/no/shhsoft/kafka/AlternativeSaslPlaintextKafkaContainer.java)
   is what my initial task would look like if KafkaContainer is
-  my alternative implmentation.
+  my alternative implementation.
 
