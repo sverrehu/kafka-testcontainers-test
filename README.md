@@ -6,7 +6,7 @@ was not very extendable. This project contains my experiments.
 
 * [DerivedSaslPlaintextKafkaContainer](./src/main/java/no/shhsoft/kafka/DerivedSaslPlaintextKafkaContainer.java)
   is an attempt at extending the original KafkaContainer. As explained
-  in the comments, this class ends up re-implementing most of
+  in the comments, my class ends up re-implementing most of
   KafkaContainer, while still being vulnerable to changes in the
   internals of the parent class.
 
@@ -16,7 +16,7 @@ was not very extendable. This project contains my experiments.
 
 * [AlternativeKafkaContainer](./src/main/java/no/shhsoft/kafka/AlternativeKafkaContainer.java)
   is an attempt at creating a more extendable KafkaContainer that
-  provides hooks that subclasses can override. I do not like
+  provides hooks that subclasses may override. I do not like
   extendability that is based on overriding non-empty methods.
 
 * [AlternativeSaslPlaintextKafkaContainer](./src/main/java/no/shhsoft/kafka/AlternativeSaslPlaintextKafkaContainer.java)
