@@ -24,7 +24,7 @@ extends AlternativeKafkaContainer {
     public AlternativeSaslPlaintextKafkaContainer(final DockerImageName dockerImageName) {
         super(dockerImageName);
         /* Note difference between 0.0.0.0 and localhost: The former will be replaced by the container IP. */
-        withEnv("KAFKA_LISTENERS", "SASL_PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "," + INTERNAL_LISTENER_NAME + "://127.0.0.1:2" + KAFKA_PORT);
+        withEnv("KAFKA_LISTENERS", "SASL_PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "," + INTERNAL_LISTENER_NAME + "://127.0.0.1:" + KAFKA_INTERNAL_PORT);
         withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "SASL_PLAINTEXT:SASL_PLAINTEXT," + INTERNAL_LISTENER_NAME + ":SASL_PLAINTEXT");
         withEnv("KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL", "PLAIN");
         withEnv("KAFKA_SASL_ENABLED_MECHANISMS", "PLAIN");
