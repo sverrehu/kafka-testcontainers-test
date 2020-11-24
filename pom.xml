@@ -31,7 +31,7 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <!-- <version>6.0.0-ccs</version> -->
-            <version>2.5.1</version> <!-- 2.6.0 gives immediate timeouts -->
+            <version>2.6.0</version>
         </dependency>
 
         <!-- required by Apache version of kafka-clients -->
