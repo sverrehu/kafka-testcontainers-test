@@ -18,14 +18,16 @@ public final class SaslPlaintextKafkaContainer
 extends GenericContainer<SaslPlaintextKafkaContainer> {
 
     private static final DockerImageName DEFAULT_IMAGE = DockerImageName.parse("confluentinc/cp-kafka").withTag("6.0.0");
+    private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
+    private static final String JAAS_CONFIG_FILE = "/tmp/broker_jaas.conf";
+    public static final String INTERNAL_LISTENER_NAME = "BROKER";
     public static final int KAFKA_PORT = 9092;
+    public static final int KAFKA_INTERNAL_PORT = 9093;
     public static final int ZOOKEEPER_PORT = 2181;
     private static final int PORT_NOT_ASSIGNED = -1;
     /* Note difference between 0.0.0.0 and localhost: The former will be replaced by the container IP. */
-    private static final String LISTENERS = "SASL_PLAINTEXT://0.0.0.0:9092,INTERNAL://127.0.0.1:29092";
+    private static final String LISTENERS = "SASL_PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "," + INTERNAL_LISTENER_NAME + "://127.0.0.1:" + KAFKA_INTERNAL_PORT;
     private int port = PORT_NOT_ASSIGNED;
-    private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
-    private static final String JAAS_CONFIG_FILE = "/tmp/broker_jaas.conf";
 
     public SaslPlaintextKafkaContainer() {
         this(DEFAULT_IMAGE);
@@ -40,11 +42,11 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
         withEnv("KAFKA_LOG_FLUSH_INTERVAL_MESSAGES", Long.MAX_VALUE + "");
         withEnv("KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS", "0");
         withEnv("KAFKA_LISTENERS", LISTENERS);
-        withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "SASL_PLAINTEXT:SASL_PLAINTEXT,INTERNAL:SASL_PLAINTEXT");
-        withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", "INTERNAL");
+        withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "SASL_PLAINTEXT:SASL_PLAINTEXT," + INTERNAL_LISTENER_NAME + ":SASL_PLAINTEXT");
+        withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", INTERNAL_LISTENER_NAME);
         withEnv("KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL", "PLAIN");
         withEnv("KAFKA_SASL_ENABLED_MECHANISMS", "PLAIN");
-        withEnv("KAFKA_AUTHORIZER_CLASS_NAME", "kafka.security.authorizer.AclAuthorizer");
+        withEnv("KAFKA_AUTHORIZER_CLASS_NAME", dockerImageName.getVersionPart().compareTo("6") >= 0 ? "kafka.security.authorizer.AclAuthorizer" : "kafka.security.auth.SimpleAclAuthorizer");
         withEnv("KAFKA_SUPER_USERS", "User:kafka");
         withEnv("KAFKA_LISTENER_NAME_SASL_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG",
                 "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\" user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"");
