@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
+import java.io.Closeable;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
@@ -13,7 +14,8 @@ import java.util.Map;
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public final class TestConsumer<V> {
+public final class TestConsumer<V>
+implements Closeable {
 
     private final KafkaConsumer<String, V> consumer;
 
@@ -53,6 +55,7 @@ public final class TestConsumer<V> {
         }
     }
 
+    @Override
     public void close() {
         consumer.close();
     }

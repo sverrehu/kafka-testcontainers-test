@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
+ */
 public final class KafkaContainerTestHelper {
 
     public static final String TOPIC_NAME = "my-test-topic";

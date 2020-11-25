@@ -13,6 +13,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
+ */
 public abstract class AbstractKafkaClientTest {
 
     private static final int NUM_VALUES_TO_PRODUCE = 3;
@@ -20,15 +23,16 @@ public abstract class AbstractKafkaClientTest {
 
     @Test
     public final void shouldAddAndListTopic() {
-        final Admin admin = getAdmin();
-        admin.createTopics(Collections.singleton(new NewTopic(KafkaContainerTestHelper.TOPIC_NAME, 1, (short) 1)));
-        final ListTopicsResult topics = admin.listTopics();
-        try {
-            final Set<String> topicNames = topics.names().get();
-            Assert.assertFalse("List of topic names is empty. Expected at least one.", topicNames.isEmpty());
-            Assert.assertTrue("Expected to find topic named " + KafkaContainerTestHelper.TOPIC_NAME, topicNames.contains(KafkaContainerTestHelper.TOPIC_NAME));
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+        try (final Admin admin = getAdmin()) {
+            admin.createTopics(Collections.singleton(new NewTopic(KafkaContainerTestHelper.TOPIC_NAME, 1, (short) 1)));
+            final ListTopicsResult topics = admin.listTopics();
+            try {
+                final Set<String> topicNames = topics.names().get();
+                Assert.assertFalse("List of topic names is empty. Expected at least one.", topicNames.isEmpty());
+                Assert.assertTrue("Expected to find topic named " + KafkaContainerTestHelper.TOPIC_NAME, topicNames.contains(KafkaContainerTestHelper.TOPIC_NAME));
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -36,9 +40,8 @@ public abstract class AbstractKafkaClientTest {
     public void shouldProduceAndConsume() {
         enableAccessForProducerAndConsumer();
 
-        final TestProducer<String> producer = getTestProducer();
-        final TestConsumer<String> consumer = getTestConsumer();
-        try {
+        try (final TestProducer<String> producer = getTestProducer();
+             final TestConsumer<String> consumer = getTestConsumer()) {
             final Set<String> values = new HashSet<>();
             for (int q = 0; q < NUM_VALUES_TO_PRODUCE; q++) {
                 final String value = (q + 1) + "-" + System.currentTimeMillis();
@@ -53,9 +56,6 @@ public abstract class AbstractKafkaClientTest {
             if (!values.isEmpty()) {
                 Assert.fail("Consumed " + (NUM_VALUES_TO_PRODUCE - values.size()) + " of " + NUM_VALUES_TO_PRODUCE + " messages.");
             }
-        } finally {
-            consumer.close();
-            producer.close();
         }
     }
 

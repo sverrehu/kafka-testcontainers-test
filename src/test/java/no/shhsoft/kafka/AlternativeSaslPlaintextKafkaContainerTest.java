@@ -11,7 +11,7 @@ import org.junit.BeforeClass;
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
 public final class AlternativeSaslPlaintextKafkaContainerTest
-extends AbstractKafkaClientTest {
+extends AbstractSaslPlaintextKafkaTestClient {
 
     private static AlternativeSaslPlaintextKafkaContainer container;
 
@@ -39,11 +39,6 @@ extends AbstractKafkaClientTest {
     @Override
     protected TestConsumer<String> getTestConsumer() {
         return KafkaContainerTestHelper.getSaslTestConsumer(container.getBootstrapServers());
-    }
-
-    @Override
-    protected void enableAccessForProducerAndConsumer() {
-        KafkaContainerTestHelper.enableAclsForProducerAndConsumer(getAdmin());
     }
 
 }

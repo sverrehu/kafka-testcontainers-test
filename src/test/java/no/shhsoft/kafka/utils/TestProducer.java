@@ -5,12 +5,14 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.io.Closeable;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public final class TestProducer<V> {
+public final class TestProducer<V>
+implements Closeable {
 
     private final KafkaProducer<String, V> producer;
 
@@ -43,6 +45,7 @@ public final class TestProducer<V> {
         producer.flush();
     }
 
+    @Override
     public void close() {
         producer.close();
     }
