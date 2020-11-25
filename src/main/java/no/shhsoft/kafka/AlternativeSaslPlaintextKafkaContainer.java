@@ -42,14 +42,14 @@ extends AlternativeKafkaContainer {
         withUser("bob", "bob-secret");
     }
 
-    public AlternativeKafkaContainer withSuperUser(final String username, final String password) {
+    public AlternativeSaslPlaintextKafkaContainer withSuperUser(final String username, final String password) {
         this.superUsername = assertValidUsernameAndPassword(username);
         this.superPassword = assertValidUsernameAndPassword(password);
         withEnv("KAFKA_SUPER_USERS", "User:" + username);
         return this;
     }
 
-    public AlternativeKafkaContainer withUser(final String username, final String password) {
+    public AlternativeSaslPlaintextKafkaContainer withUser(final String username, final String password) {
         usernamesAndPasswords.put(assertValidUsernameAndPassword(username), assertValidUsernameAndPassword(password));
         return this;
     }
