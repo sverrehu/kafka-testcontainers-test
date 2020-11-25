@@ -59,6 +59,8 @@ public abstract class AbstractKafkaClientTest {
         }
     }
 
+    protected abstract String getBootstrapServers();
+
     protected abstract Admin getAdmin();
 
     protected abstract TestProducer<String> getTestProducer();

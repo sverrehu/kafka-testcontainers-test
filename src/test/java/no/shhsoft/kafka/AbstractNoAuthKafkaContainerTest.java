@@ -8,29 +8,26 @@ import org.apache.kafka.clients.admin.Admin;
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public abstract class AbstractSaslPlaintextKafkaTestClient
+public abstract class AbstractNoAuthKafkaContainerTest
 extends AbstractKafkaClientTest {
 
     @Override
-    protected final void enableAccessForProducerAndConsumer() {
-        try (final Admin admin = getAdmin()) {
-            KafkaContainerTestHelper.enableAclsForProducerAndConsumer(admin);
-        }
-    }
-
-    @Override
     protected final Admin getAdmin() {
-        return KafkaContainerTestHelper.getSaslAdmin(getBootstrapServers());
+        return KafkaContainerTestHelper.getNoAuthAdmin(getBootstrapServers());
     }
 
     @Override
     protected final TestProducer<String> getTestProducer() {
-        return KafkaContainerTestHelper.getSaslTestProducer(getBootstrapServers());
+        return KafkaContainerTestHelper.getNoAuthTestProducer(getBootstrapServers());
     }
 
     @Override
     protected final TestConsumer<String> getTestConsumer() {
-        return KafkaContainerTestHelper.getSaslTestConsumer(getBootstrapServers());
+        return KafkaContainerTestHelper.getNoAuthTestConsumer(getBootstrapServers());
+    }
+
+    @Override
+    protected final void enableAccessForProducerAndConsumer() {
     }
 
 }

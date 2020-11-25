@@ -1,9 +1,5 @@
 package no.shhsoft.kafka;
 
-import no.shhsoft.kafka.utils.KafkaContainerTestHelper;
-import no.shhsoft.kafka.utils.TestConsumer;
-import no.shhsoft.kafka.utils.TestProducer;
-import org.apache.kafka.clients.admin.Admin;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -27,18 +23,8 @@ extends AbstractSaslPlaintextKafkaTestClient {
     }
 
     @Override
-    protected Admin getAdmin() {
-        return KafkaContainerTestHelper.getSaslAdmin(container.getBootstrapServers());
-    }
-
-    @Override
-    protected TestProducer<String> getTestProducer() {
-        return KafkaContainerTestHelper.getSaslTestProducer(container.getBootstrapServers());
-    }
-
-    @Override
-    protected TestConsumer<String> getTestConsumer() {
-        return KafkaContainerTestHelper.getSaslTestConsumer(container.getBootstrapServers());
+    protected String getBootstrapServers() {
+        return container.getBootstrapServers();
     }
 
 }
