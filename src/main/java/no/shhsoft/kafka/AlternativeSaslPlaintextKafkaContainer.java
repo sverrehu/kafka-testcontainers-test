@@ -49,6 +49,10 @@ extends AlternativeKafkaContainer {
         return this;
     }
 
+    public AlternativeSaslPlaintextKafkaContainer withUser(final String usernameAndPassword) {
+        return withUser(usernameAndPassword, usernameAndPassword);
+    }
+
     public AlternativeSaslPlaintextKafkaContainer withUser(final String username, final String password) {
         usernamesAndPasswords.put(assertValidUsernameAndPassword(username), assertValidUsernameAndPassword(password));
         return this;
