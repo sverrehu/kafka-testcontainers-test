@@ -24,12 +24,12 @@ extends AbstractKafkaClientTest {
     }
 
     @Override
-    protected final TestProducer<String> getTestProducer() {
+    protected final TestProducer getTestProducer() {
         return KafkaContainerTestHelper.getSaslTestProducer(getBootstrapServers());
     }
 
     @Override
-    protected final TestConsumer<String> getTestConsumer() {
+    protected final TestConsumer getTestConsumer() {
         return KafkaContainerTestHelper.getSaslTestConsumer(getBootstrapServers());
     }
 

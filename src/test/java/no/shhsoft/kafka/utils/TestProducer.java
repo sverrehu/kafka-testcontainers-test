@@ -6,21 +6,25 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.io.Closeable;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public final class TestProducer<V>
+public final class TestProducer
 implements Closeable {
 
-    private final KafkaProducer<String, V> producer;
+    private static final int NUM_VALUES_TO_PRODUCE = 3;
+    private final KafkaProducer<String, String> producer;
 
-    private TestProducer(final KafkaProducer<String, V> producer) {
+    private TestProducer(final KafkaProducer<String, String> producer) {
         this.producer = producer;
     }
 
-    public static TestProducer<String> forStringValues(final Map<String, Object> config) {
+    public static TestProducer create(final Map<String, Object> config) {
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.ACKS_CONFIG, "all");
@@ -28,21 +32,36 @@ implements Closeable {
         config.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "3000");
         config.put(ProducerConfig.LINGER_MS_CONFIG, "0");
         config.put(ProducerConfig.RETRIES_CONFIG, "0");
-        return new TestProducer<>(new KafkaProducer<>(config));
+        return new TestProducer(new KafkaProducer<>(config));
     }
 
-    public void produce(final String topicName, final V recordValue) {
+    public void produce(final String topicName, final String recordValue) {
         produce(topicName, null, recordValue);
     }
 
-    public void produce(final String topicName, final String key, final V recordValue) {
-        final ProducerRecord<String, V> record = new ProducerRecord<>(topicName, key, recordValue);
-        producer.send(record, (metadata, exception) -> {
-            if (exception != null) {
-                throw new RuntimeException("Got exception while sending", exception);
-            }
-        });
+    public void produce(final String topicName, final String key, final String recordValue) {
+        final ProducerRecord<String, String> record = new ProducerRecord<>(topicName, key, recordValue);
+        try {
+            producer.send(record, (metadata, exception) -> {
+                if (exception != null) {
+                    throw new RuntimeException("Got exception while sending", exception);
+                }
+            }).get(); // Make call synchronous, to be able to get exceptions in time.
+        } catch (final InterruptedException | ExecutionException e) {
+            final Throwable cause = e.getCause();
+            throw (cause instanceof RuntimeException) ? (RuntimeException) cause : new RuntimeException(e);
+        }
         producer.flush();
+    }
+
+    public Set<String> produceSomeStrings(final String topicName) {
+        final Set<String> values = new HashSet<>();
+        for (int q = 0; q < NUM_VALUES_TO_PRODUCE; q++) {
+            final String value = (q + 1) + "-" + System.currentTimeMillis();
+            values.add(value);
+            produce(topicName, value);
+        }
+        return values;
     }
 
     @Override

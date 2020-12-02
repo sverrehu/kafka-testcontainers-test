@@ -10,16 +10,12 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
 public abstract class AbstractKafkaClientTest {
-
-    private static final int NUM_VALUES_TO_PRODUCE = 3;
-    private static final long MAX_MS_TO_CONSUME = 20 * 1000L;
 
     @Test
     public final void shouldAddAndListTopic() {
@@ -39,22 +35,14 @@ public abstract class AbstractKafkaClientTest {
     @Test
     public void shouldProduceAndConsume() {
         enableAccessForProducerAndConsumer();
-
-        try (final TestProducer<String> producer = getTestProducer();
-             final TestConsumer<String> consumer = getTestConsumer()) {
-            final Set<String> values = new HashSet<>();
-            for (int q = 0; q < NUM_VALUES_TO_PRODUCE; q++) {
-                final String value = (q + 1) + "-" + System.currentTimeMillis();
-                values.add(value);
-                producer.produce(KafkaContainerTestHelper.TOPIC_NAME, value);
-            }
-
-            consumer.consumeForAWhile(KafkaContainerTestHelper.TOPIC_NAME, MAX_MS_TO_CONSUME, (key, value) -> {
+        try (final TestProducer producer = getTestProducer(); final TestConsumer consumer = getTestConsumer()) {
+            final Set<String> values = producer.produceSomeStrings(KafkaContainerTestHelper.TOPIC_NAME);
+            consumer.consumeForAWhile(KafkaContainerTestHelper.TOPIC_NAME, (key, value) -> {
                 values.remove(value);
                 return !values.isEmpty();
             });
             if (!values.isEmpty()) {
-                Assert.fail("Consumed " + (NUM_VALUES_TO_PRODUCE - values.size()) + " of " + NUM_VALUES_TO_PRODUCE + " messages.");
+                Assert.fail("Unable to consume all messages.");
             }
         }
     }
@@ -63,9 +51,9 @@ public abstract class AbstractKafkaClientTest {
 
     protected abstract Admin getAdmin();
 
-    protected abstract TestProducer<String> getTestProducer();
+    protected abstract TestProducer getTestProducer();
 
-    protected abstract TestConsumer<String> getTestConsumer();
+    protected abstract TestConsumer getTestConsumer();
 
     protected abstract void enableAccessForProducerAndConsumer();
 

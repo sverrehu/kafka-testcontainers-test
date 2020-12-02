@@ -30,12 +30,12 @@ public final class KafkaContainerTestHelper {
         return Admin.create(getSaslConfig(boostrapServers, "kafka", "kafka"));
     }
 
-    public static TestProducer<String> getSaslTestProducer(final String bootstrapServers) {
-        return TestProducer.forStringValues(getSaslConfig(bootstrapServers, "alice", "alice-secret"));
+    public static TestProducer getSaslTestProducer(final String bootstrapServers) {
+        return TestProducer.create(getSaslConfig(bootstrapServers, "alice", "alice-secret"));
     }
 
-    public static TestConsumer<String> getSaslTestConsumer(final String bootstrapServers) {
-        return TestConsumer.forStringValues(getSaslConfig(bootstrapServers, "bob", "bob-secret"), CONSUMER_GROUP_NAME);
+    public static TestConsumer getSaslTestConsumer(final String bootstrapServers) {
+        return TestConsumer.create(getSaslConfig(bootstrapServers, "bob", "bob-secret"), CONSUMER_GROUP_NAME);
     }
 
     private static Map<String, Object> getSaslConfig(final String bootstrapServers, final String userName, final String password) {
@@ -54,12 +54,12 @@ public final class KafkaContainerTestHelper {
         return Admin.create(getBaseConfig(boostrapServers));
     }
 
-    public static TestProducer<String> getNoAuthTestProducer(final String bootstrapServers) {
-        return TestProducer.forStringValues(getBaseConfig(bootstrapServers));
+    public static TestProducer getNoAuthTestProducer(final String bootstrapServers) {
+        return TestProducer.create(getBaseConfig(bootstrapServers));
     }
 
-    public static TestConsumer<String> getNoAuthTestConsumer(final String bootstrapServers) {
-        return TestConsumer.forStringValues(getBaseConfig(bootstrapServers), CONSUMER_GROUP_NAME);
+    public static TestConsumer getNoAuthTestConsumer(final String bootstrapServers) {
+        return TestConsumer.create(getBaseConfig(bootstrapServers), CONSUMER_GROUP_NAME);
     }
 
     private static Map<String, Object> getBaseConfig(final String bootstrapServers) {
