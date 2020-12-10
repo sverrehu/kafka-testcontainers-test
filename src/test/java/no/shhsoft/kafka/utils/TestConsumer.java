@@ -48,11 +48,11 @@ implements Closeable {
     public void consumeForAWhile(final String topicName, final RecordHandler handler) {
         consumer.subscribe(Collections.singleton(topicName));
         final long endTime = System.currentTimeMillis() + MAX_MS_TO_CONSUME;
-        while (System.currentTimeMillis() < endTime) {
+        outer: while (System.currentTimeMillis() < endTime) {
             final ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
             for (final ConsumerRecord<String, String> record : records) {
                 if (handler != null && !handler.handle(record.key(), record.value())) {
-                    break;
+                    break outer;
                 }
                 consumer.commitAsync();
             }
